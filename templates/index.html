@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    
+
+<head>
+    <title>FEDSALES</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="logo">
+        <img src="static\logo.png" alt="Logo">
+    </div>
+    <h1>Federated Demand Forecasting</h1>
+    <form action="/predict" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" id="file-input" required>
+        <input type="submit" value="Predict">
+    </form>
+    <div id="predictions"></div>
+    <div id="download-links">
+        <h2>Download CSV File:</h2>
+        <button><a href="#" id="predictions-csv-link" download>Download Predictions CSV</a></button>
+    </div>
+
+    <script>
+        const form = document.querySelector('form');
+        const predictionsDiv = document.getElementById('predictions');
+        const predictionsCsvLink = document.getElementById('predictions-csv-link');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                alert(`Error: ${errorMessage}`);
+                return;
+            }
+
+            const result = await response.json();
+            displayPredictions(result.predictions_to_display);
+            predictionsCsvLink.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(result.predictions_csv);
+        });
+
+        function displayPredictions(predictions) {
+            const predictionsDiv = document.getElementById('predictions');
+            let c=1;
+            let html = '<h2>Predictions for the first 5 items:</h2><ul>';
+            predictions.forEach((prediction) => {
+                html += `<li>Need for item ${c} this week:${Math.round(prediction)}</li>`;
+                c=c+1;
+            });
+            html += '</ul>';
+            predictionsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+
